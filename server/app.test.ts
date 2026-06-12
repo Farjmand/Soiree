@@ -113,4 +113,32 @@ describe('POST /api/generate-theme', () => {
 
     expect(response.status).toBe(500);
   });
+
+  it('returns 400 when a form field exceeds the maximum allowed length', async () => {
+    vi.stubEnv('GEMINI_API_KEY', 'test-server-side-key');
+    const oversizedForm = { ...validForm, vibe: 'x'.repeat(101) };
+
+    const response = await request(createApp()).post('/api/generate-theme').send(oversizedForm);
+
+    expect(response.status).toBe(400);
+  });
+
+  it('returns 429 once a client exceeds the request rate limit', async () => {
+    vi.stubEnv('GEMINI_API_KEY', 'test-server-side-key');
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve(geminiSuccessBody),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const app = createApp();
+    const responses = [];
+    for (let i = 0; i < 21; i++) {
+      responses.push(await request(app).post('/api/generate-theme').send(validForm));
+    }
+
+    expect(responses.at(-1)?.status).toBe(429);
+    expect(responses.slice(0, 20).every((response) => response.status === 200)).toBe(true);
+  });
 });

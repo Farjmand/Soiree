@@ -3,6 +3,7 @@ export interface PartyForm {
   vibe: string;
   season: string;
   culturalFlavor: string;
+  fictionalUniverse: string;
 }
 
 export interface FoodItem {
@@ -20,7 +21,7 @@ export interface DressCode {
 export interface PartyTheme {
   themeName: string;
   themeEmoji: string;
-  themeDescription: string;
+  themeDescription: string[];
   foodItems: FoodItem[];
   dresscode: DressCode;
 }

@@ -1,4 +1,4 @@
-import type { PartyForm, PartyTheme } from './types';
+import type { DressCode, FoodItem, PartyForm, PartyTheme } from './types';
 
 const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
@@ -34,6 +34,24 @@ Fictional Inspiration: ${form.fictionalUniverse || 'None'}
 Be creative and specific. Food must suit both the culture and theme.`;
 }
 
+function isFoodItem(value: unknown): value is FoodItem {
+  if (typeof value !== 'object' || value === null) return false;
+  const candidate = value as Record<string, unknown>;
+  return typeof candidate.name === 'string' && typeof candidate.description === 'string';
+}
+
+function isDressCode(value: unknown): value is DressCode {
+  if (typeof value !== 'object' || value === null) return false;
+  const candidate = value as Record<string, unknown>;
+  return (
+    typeof candidate.title === 'string' &&
+    typeof candidate.description === 'string' &&
+    typeof candidate.avoid === 'string' &&
+    Array.isArray(candidate.colors) &&
+    candidate.colors.every((color) => typeof color === 'string')
+  );
+}
+
 function assertPartyThemeShape(value: unknown): asserts value is PartyTheme {
   if (typeof value !== 'object' || value === null) {
     throw new TypeError('Unexpected party theme shape: response must be an object');
@@ -45,11 +63,23 @@ function assertPartyThemeShape(value: unknown): asserts value is PartyTheme {
     throw new TypeError('Unexpected party theme shape: themeName must be a string');
   }
 
+  if (typeof candidate.themeEmoji !== 'string') {
+    throw new TypeError('Unexpected party theme shape: themeEmoji must be a string');
+  }
+
   if (
     !Array.isArray(candidate.themeDescription) ||
     !candidate.themeDescription.every((entry) => typeof entry === 'string')
   ) {
     throw new TypeError('Unexpected party theme shape: themeDescription must be an array of strings');
+  }
+
+  if (!Array.isArray(candidate.foodItems) || !candidate.foodItems.every(isFoodItem)) {
+    throw new TypeError('Unexpected party theme shape: foodItems must be an array of {name, description}');
+  }
+
+  if (!isDressCode(candidate.dresscode)) {
+    throw new TypeError('Unexpected party theme shape: dresscode must include title, description, colors, and avoid');
   }
 }
 

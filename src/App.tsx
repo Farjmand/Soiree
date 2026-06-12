@@ -4,7 +4,7 @@ import { InputView } from './components/InputView';
 import { ResultsView } from './components/ResultsView';
 import { DetailView } from './components/DetailView';
 import { generatePartyTheme } from './api';
-import { DEFAULT_SEASON } from './constants';
+import { DEFAULT_SEASON, DEFAULT_FICTIONAL_UNIVERSE } from './constants';
 import type { AppView, PartyForm, PartyTheme } from './types';
 
 const DEFAULT_FORM: PartyForm = {
@@ -12,6 +12,7 @@ const DEFAULT_FORM: PartyForm = {
   vibe: '',
   season: DEFAULT_SEASON,
   culturalFlavor: '',
+  fictionalUniverse: DEFAULT_FICTIONAL_UNIVERSE,
 };
 
 export default function App() {

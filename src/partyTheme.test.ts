@@ -50,4 +50,25 @@ describe('parsePartyThemeResponse', () => {
       'Unexpected party theme shape: themeName must be a string',
     );
   });
+
+  it('throws when themeEmoji is missing', () => {
+    const { themeEmoji: _themeEmoji, ...withoutThemeEmoji } = validTheme;
+    expect(() => parsePartyThemeResponse(JSON.stringify(withoutThemeEmoji))).toThrow(
+      'Unexpected party theme shape: themeEmoji must be a string',
+    );
+  });
+
+  it('throws when foodItems entries are missing a description', () => {
+    const malformed = { ...validTheme, foodItems: [{ name: 'Glow Punch' }] };
+    expect(() => parsePartyThemeResponse(JSON.stringify(malformed))).toThrow(
+      'Unexpected party theme shape: foodItems must be an array of {name, description}',
+    );
+  });
+
+  it('throws when dresscode.colors is not an array of strings', () => {
+    const malformed = { ...validTheme, dresscode: { ...validTheme.dresscode, colors: 'Pink' } };
+    expect(() => parsePartyThemeResponse(JSON.stringify(malformed))).toThrow(
+      'Unexpected party theme shape: dresscode must include title, description, colors, and avoid',
+    );
+  });
 });

@@ -10,10 +10,38 @@ const REQUIRED_PARTY_FORM_FIELDS: ReadonlyArray<keyof PartyForm> = [
   'fictionalUniverse',
 ];
 
+const MAX_PARTY_FORM_FIELD_LENGTH = 100;
+
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 20;
+
 function isPartyForm(value: unknown): value is PartyForm {
   if (typeof value !== 'object' || value === null) return false;
   const candidate = value as Record<string, unknown>;
-  return REQUIRED_PARTY_FORM_FIELDS.every((field) => typeof candidate[field] === 'string');
+  return REQUIRED_PARTY_FORM_FIELDS.every((field) => {
+    const fieldValue = candidate[field];
+    return typeof fieldValue === 'string' && fieldValue.length <= MAX_PARTY_FORM_FIELD_LENGTH;
+  });
+}
+
+function createRateLimiter(windowMs: number, maxRequests: number) {
+  const requestTimestampsByClient = new Map<string, number[]>();
+
+  return function rateLimit(request: Request, response: Response, next: () => void): void {
+    const clientId = request.ip ?? 'unknown';
+    const now = Date.now();
+    const recentTimestamps = (requestTimestampsByClient.get(clientId) ?? [])
+      .filter((timestamp) => now - timestamp < windowMs);
+
+    if (recentTimestamps.length >= maxRequests) {
+      response.status(429).json({ error: 'Too many requests, please try again later' });
+      return;
+    }
+
+    recentTimestamps.push(now);
+    requestTimestampsByClient.set(clientId, recentTimestamps);
+    next();
+  };
 }
 
 async function handleGenerateTheme(request: Request, response: Response): Promise<void> {
@@ -39,6 +67,6 @@ async function handleGenerateTheme(request: Request, response: Response): Promis
 export function createApp(): Express {
   const app = express();
   app.use(express.json());
-  app.post('/api/generate-theme', handleGenerateTheme);
+  app.post('/api/generate-theme', createRateLimiter(RATE_LIMIT_WINDOW_MS, RATE_LIMIT_MAX_REQUESTS), handleGenerateTheme);
   return app;
 }

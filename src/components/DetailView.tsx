@@ -1,19 +1,13 @@
 import type { CSSProperties } from 'react';
-import { colors, appBackground } from '../theme';
+import { colors, appBackground, cardVariants, glassCardBase } from '../theme';
+import { BulletList } from './BulletList';
 import type { PartyTheme, FoodItem, DressCode } from '../types';
 
 interface DetailViewProps {
-  theme: PartyTheme;
-  onBack: () => void;
-  onReset: () => void;
+  readonly theme: PartyTheme;
+  readonly onBack: () => void;
+  readonly onReset: () => void;
 }
-
-const cardStyle: CSSProperties = {
-  background: 'linear-gradient(145deg, #221040, #160b28)',
-  border: `1px solid ${colors.border}`,
-  borderRadius: 20,
-  padding: 28,
-};
 
 const sectionLabelStyle: CSSProperties = {
   fontSize: 10,
@@ -31,7 +25,7 @@ const cardHeadingStyle: CSSProperties = {
   marginBottom: 12,
 };
 
-export function DetailView({ theme, onBack, onReset }: DetailViewProps) {
+export function DetailView({ theme, onBack, onReset }: Readonly<DetailViewProps>) {
   return (
     <div style={{ ...appBackground, padding: '44px 20px 80px' }}>
       <div style={{ maxWidth: 900, margin: '0 auto', width: '100%' }}>
@@ -55,7 +49,7 @@ export function DetailView({ theme, onBack, onReset }: DetailViewProps) {
             className="gen-btn"
             onClick={onReset}
             style={{
-              background: colors.gold, color: '#12071f', border: 'none',
+              background: colors.gold, color: colors.bg, border: 'none',
               borderRadius: 12, padding: '14px 36px', fontSize: 14,
               fontWeight: 500, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
             }}
@@ -68,24 +62,24 @@ export function DetailView({ theme, onBack, onReset }: DetailViewProps) {
   );
 }
 
-function ThemeCard({ theme }: { theme: PartyTheme }) {
+function ThemeCard({ theme }: Readonly<{ theme: PartyTheme }>) {
   return (
-    <div className="detail-card fu2" style={cardStyle}>
+    <div className="detail-card fu2" style={{ ...glassCardBase, ...cardVariants.theme }}>
       <div style={sectionLabelStyle}>🎨 The Theme</div>
       <h3 style={cardHeadingStyle}>{theme.themeName}</h3>
-      <p style={{ color: colors.muted, fontSize: 13, lineHeight: 1.8 }}>{theme.themeDescription}</p>
+      <BulletList items={theme.themeDescription} />
     </div>
   );
 }
 
-function MenuCard({ foodItems }: { foodItems: FoodItem[] }) {
+function MenuCard({ foodItems }: Readonly<{ foodItems: FoodItem[] }>) {
   return (
-    <div className="detail-card fu3" style={cardStyle}>
+    <div className="detail-card fu3" style={{ ...glassCardBase, ...cardVariants.menu }}>
       <div style={sectionLabelStyle}>🍽️ The Menu</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
         {foodItems.map((item, i) => (
           <div
-            key={i}
+            key={`${item.name}-${i}`}
             style={{
               paddingBottom: i < foodItems.length - 1 ? 11 : 0,
               borderBottom: i < foodItems.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
@@ -100,9 +94,9 @@ function MenuCard({ foodItems }: { foodItems: FoodItem[] }) {
   );
 }
 
-function DressCodeCard({ dresscode }: { dresscode: DressCode }) {
+function DressCodeCard({ dresscode }: Readonly<{ dresscode: DressCode }>) {
   return (
-    <div className="detail-card fu4" style={cardStyle}>
+    <div className="detail-card fu4" style={{ ...glassCardBase, ...cardVariants.dressCode }}>
       <div style={sectionLabelStyle}>👗 Dress Code</div>
       <h3 style={cardHeadingStyle}>{dresscode.title}</h3>
       <p style={{ color: colors.muted, fontSize: 13, lineHeight: 1.8, marginBottom: 20 }}>
@@ -116,10 +110,10 @@ function DressCodeCard({ dresscode }: { dresscode: DressCode }) {
         <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
           {dresscode.colors.map((col, i) => (
             <span
-              key={i}
+              key={`${col}-${i}`}
               style={{
-                background: 'rgba(212,175,55,0.1)',
-                border: '1px solid rgba(212,175,55,0.22)',
+                background: 'rgba(213,137,54,0.08)',
+                border: '1px solid rgba(213,137,54,0.22)',
                 color: colors.gold,
                 padding: '4px 11px',
                 borderRadius: 20,
@@ -132,7 +126,7 @@ function DressCodeCard({ dresscode }: { dresscode: DressCode }) {
         </div>
       </div>
 
-      <div style={{ background: 'rgba(255,100,100,0.06)', border: '1px solid rgba(255,100,100,0.13)', borderRadius: 10, padding: '10px 13px' }}>
+      <div style={{ background: 'rgba(164,66,0,0.1)', border: '1px solid rgba(164,66,0,0.3)', borderRadius: 10, padding: '10px 13px' }}>
         <span style={{ color: colors.red, fontSize: 10, letterSpacing: '1.5px', textTransform: 'uppercase' }}>Avoid </span>
         <span style={{ color: colors.muted, fontSize: 12 }}>{dresscode.avoid}</span>
       </div>
