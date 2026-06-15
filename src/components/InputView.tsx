@@ -1,4 +1,3 @@
-import { colors, appBackground } from '../theme';
 import { OCCASIONS, VIBES, SEASONS, CULTURAL_FLAVORS, FICTIONAL_UNIVERSES } from '../constants';
 import { SelectField } from './SelectField';
 import type { PartyForm } from '../types';
@@ -13,11 +12,11 @@ interface InputViewProps {
 
 export function InputView({ form, loading, error, onChange, onGenerate }: Readonly<InputViewProps>) {
   return (
-    <div style={appBackground}>
-      <div style={{ maxWidth: 500, margin: '0 auto', padding: '52px 24px' }}>
+    <div className="app-bg">
+      <div className="page-narrow">
         <Header />
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div className="form-stack">
           <SelectField
             label="Occasion"
             value={form.occasion}
@@ -59,11 +58,9 @@ export function InputView({ form, loading, error, onChange, onGenerate }: Readon
             onChange={val => onChange({ fictionalUniverse: val })}
           />
 
-          {error && (
-            <p style={{ color: colors.red, fontSize: 13, textAlign: 'center' }}>{error}</p>
-          )}
+          {error && <p className="error-text">{error}</p>}
 
-          <div className="fu4" style={{ marginTop: 6 }}>
+          <div className="fu4 generate-wrap">
             <GenerateButton loading={loading} onClick={onGenerate} />
           </div>
         </div>
@@ -74,16 +71,13 @@ export function InputView({ form, loading, error, onChange, onGenerate }: Readon
 
 function Header() {
   return (
-    <div style={{ textAlign: 'center', marginBottom: 44 }} className="fu">
-      <div style={{ fontSize: 48, marginBottom: 14 }}>🎪</div>
-      <h1 style={{
-        fontFamily: "'Cormorant Garamond', serif",
-        fontSize: 40, fontWeight: 300, lineHeight: 1.15, color: colors.cream,
-      }}>
+    <div className="header fu">
+      <div className="header-emoji">🎪</div>
+      <h1 className="header-title">
         Throwing a Party?<br />
-        <em style={{ color: colors.gold }}>We've Got Opinions.</em>
+        <em>We've Got Opinions.</em>
       </h1>
-      <p style={{ color: colors.muted, marginTop: 12, fontSize: 13, letterSpacing: '0.4px' }}>
+      <p className="header-subtitle">
         Fill in the fields. We'll act like we know what we're doing.
       </p>
     </div>
@@ -98,17 +92,9 @@ interface GenerateButtonProps {
 function GenerateButton({ loading, onClick }: Readonly<GenerateButtonProps>) {
   return (
     <button
-      className="gen-btn"
+      className="gen-btn generate-btn"
       onClick={onClick}
       disabled={loading}
-      style={{
-        width: '100%', padding: '15px', borderRadius: 12, border: 'none',
-        background: loading ? 'rgba(213,137,54,0.5)' : colors.gold,
-        color: colors.bg,
-        fontSize: 14, fontWeight: 500, letterSpacing: '0.4px',
-        cursor: loading ? 'not-allowed' : 'pointer',
-        fontFamily: "'DM Sans', sans-serif",
-      }}
     >
       {loading ? <><span className="spinner" />Conjuring your theme…</> : 'Generate Theme ✨'}
     </button>

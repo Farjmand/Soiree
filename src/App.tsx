@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useGlobalStyles } from './hooks/useGlobalStyles';
+import { useTheme } from './context/ThemeContext';
 import { InputView } from './components/InputView';
 import { ResultsView } from './components/ResultsView';
 import { DetailView } from './components/DetailView';
@@ -16,7 +17,8 @@ const DEFAULT_FORM: PartyForm = {
 };
 
 export default function App() {
-  useGlobalStyles();
+  const { colors, setThemeFromSelection } = useTheme();
+  useGlobalStyles(colors);
 
   const [view, setView] = useState<AppView>('input');
   const [form, setForm] = useState<PartyForm>(DEFAULT_FORM);
@@ -38,6 +40,7 @@ export default function App() {
     try {
       const theme = await generatePartyTheme(form);
       setResult(theme);
+      setThemeFromSelection(form.vibe, form.season);
       setView('results');
     } catch {
       setError('Something went wrong. Give it another shot!');

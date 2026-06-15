@@ -1,7 +1,8 @@
-import type { CSSProperties } from 'react';
-import { colors, appBackground, cardVariants, glassCardBase } from '../theme';
+import { useState } from 'react';
 import { BulletList } from './BulletList';
-import type { PartyTheme, FoodItem, DressCode } from '../types';
+import { RecipeModal } from './RecipeModal';
+import { generateRecipe } from '../api';
+import type { PartyTheme, FoodItem, DressCode, Recipe } from '../types';
 
 interface DetailViewProps {
   readonly theme: PartyTheme;
@@ -9,85 +10,139 @@ interface DetailViewProps {
   readonly onReset: () => void;
 }
 
-const sectionLabelStyle: CSSProperties = {
-  fontSize: 10,
-  letterSpacing: '2px',
-  textTransform: 'uppercase',
-  color: colors.gold,
-  marginBottom: 16,
-};
-
-const cardHeadingStyle: CSSProperties = {
-  fontFamily: "'Cormorant Garamond', serif",
-  fontSize: 22,
-  fontWeight: 400,
-  color: colors.cream,
-  marginBottom: 12,
-};
-
 export function DetailView({ theme, onBack, onReset }: Readonly<DetailViewProps>) {
+  const recipes = useDishRecipes();
+
   return (
-    <div style={{ ...appBackground, padding: '44px 20px 80px' }}>
-      <div style={{ maxWidth: 900, margin: '0 auto', width: '100%' }}>
+    <div className="app-bg page-detail">
+      <div className="page-wide">
         <button className="back-btn fu" onClick={onBack}>← Back</button>
 
-        <div style={{ textAlign: 'center', margin: '32px 0 44px' }} className="fu1">
-          <div style={{ fontSize: 44, marginBottom: 12 }}>{theme.themeEmoji}</div>
-          <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 34, fontWeight: 300, color: colors.cream }}>
+        <div className="detail-hero fu1">
+          <div className="detail-hero-emoji">{theme.themeEmoji}</div>
+          <h1 className="detail-hero-title">
             {theme.themeName}
           </h1>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 18 }}>
+        <div className="card-grid">
           <ThemeCard theme={theme} />
-          <MenuCard foodItems={theme.foodItems} />
+          <MenuCard foodItems={theme.foodItems} onSelectDish={recipes.openRecipe} />
           <DressCodeCard dresscode={theme.dresscode} />
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: 48 }}>
-          <button
-            className="gen-btn"
-            onClick={onReset}
-            style={{
-              background: colors.gold, color: colors.bg, border: 'none',
-              borderRadius: 12, padding: '14px 36px', fontSize: 14,
-              fontWeight: 500, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
-            }}
-          >
+        <div className="detail-footer">
+          <button className="gen-btn regenerate-btn" onClick={onReset}>
             Generate Another Theme ✨
           </button>
         </div>
       </div>
+
+      {recipes.selectedDish && (
+        <RecipeModal
+          dishName={recipes.selectedDish.name}
+          recipe={recipes.recipe}
+          isLoading={recipes.isLoading}
+          error={recipes.error}
+          onClose={recipes.closeRecipe}
+          onRetry={recipes.retry}
+        />
+      )}
     </div>
   );
 }
 
+interface DishRecipes {
+  readonly selectedDish: FoodItem | null;
+  readonly recipe: Recipe | null;
+  readonly isLoading: boolean;
+  readonly error: string | null;
+  readonly openRecipe: (dish: FoodItem) => void;
+  readonly closeRecipe: () => void;
+  readonly retry: () => void;
+}
+
+function useDishRecipes(): DishRecipes {
+  const [selectedDish, setSelectedDish] = useState<FoodItem | null>(null);
+  const [recipeCache, setRecipeCache] = useState<Record<string, Recipe>>({});
+  const [loadingDishNames, setLoadingDishNames] = useState<ReadonlySet<string>>(new Set());
+  const [errorsByDish, setErrorsByDish] = useState<Record<string, string>>({});
+
+  async function loadRecipe(dish: FoodItem): Promise<void> {
+    setLoadingDishNames((names) => new Set(names).add(dish.name));
+    setErrorsByDish(({ [dish.name]: _removed, ...rest }) => rest);
+
+    try {
+      const recipe = await generateRecipe({ dishName: dish.name, dishDescription: dish.description });
+      setRecipeCache((cache) => ({ ...cache, [dish.name]: recipe }));
+    } catch {
+      setErrorsByDish((errors) => ({ ...errors, [dish.name]: 'Failed to load recipe. Please try again.' }));
+    } finally {
+      setLoadingDishNames((names) => {
+        const next = new Set(names);
+        next.delete(dish.name);
+        return next;
+      });
+    }
+  }
+
+  function openRecipe(dish: FoodItem): void {
+    setSelectedDish(dish);
+
+    if (!recipeCache[dish.name] && !loadingDishNames.has(dish.name)) {
+      void loadRecipe(dish);
+    }
+  }
+
+  function closeRecipe(): void {
+    setSelectedDish(null);
+  }
+
+  function retry(): void {
+    if (selectedDish) void loadRecipe(selectedDish);
+  }
+
+  return {
+    selectedDish,
+    recipe: selectedDish ? recipeCache[selectedDish.name] ?? null : null,
+    isLoading: selectedDish ? loadingDishNames.has(selectedDish.name) : false,
+    error: selectedDish ? errorsByDish[selectedDish.name] ?? null : null,
+    openRecipe,
+    closeRecipe,
+    retry,
+  };
+}
+
 function ThemeCard({ theme }: Readonly<{ theme: PartyTheme }>) {
   return (
-    <div className="detail-card fu2" style={{ ...glassCardBase, ...cardVariants.theme }}>
-      <div style={sectionLabelStyle}>🎨 The Theme</div>
-      <h3 style={cardHeadingStyle}>{theme.themeName}</h3>
+    <div className="detail-card fu2 glass-card card-theme">
+      <div className="section-label">🎨 The Theme</div>
+      <h3 className="card-heading">{theme.themeName}</h3>
       <BulletList items={theme.themeDescription} />
     </div>
   );
 }
 
-function MenuCard({ foodItems }: Readonly<{ foodItems: FoodItem[] }>) {
+interface MenuCardProps {
+  readonly foodItems: FoodItem[];
+  readonly onSelectDish: (dish: FoodItem) => void;
+}
+
+function MenuCard({ foodItems, onSelectDish }: MenuCardProps) {
   return (
-    <div className="detail-card fu3" style={{ ...glassCardBase, ...cardVariants.menu }}>
-      <div style={sectionLabelStyle}>🍽️ The Menu</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+    <div className="detail-card fu3 glass-card card-menu">
+      <div className="section-label">🍽️ The Menu</div>
+      <div className="menu-list">
         {foodItems.map((item, i) => (
-          <div
+          <button
+            type="button"
             key={`${item.name}-${i}`}
-            style={{
-              paddingBottom: i < foodItems.length - 1 ? 11 : 0,
-              borderBottom: i < foodItems.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
-            }}
+            onClick={() => onSelectDish(item)}
+            className="menu-item"
           >
-            <div style={{ color: colors.cream, fontSize: 13, fontWeight: 500, marginBottom: 2 }}>{item.name}</div>
-            <div style={{ color: colors.muted, fontSize: 12, lineHeight: 1.5 }}>{item.description}</div>
-          </div>
+            <div className="menu-item-name">{item.name}</div>
+            <div className="menu-item-desc">{item.description}</div>
+          </button>
         ))}
       </div>
     </div>
@@ -96,39 +151,29 @@ function MenuCard({ foodItems }: Readonly<{ foodItems: FoodItem[] }>) {
 
 function DressCodeCard({ dresscode }: Readonly<{ dresscode: DressCode }>) {
   return (
-    <div className="detail-card fu4" style={{ ...glassCardBase, ...cardVariants.dressCode }}>
-      <div style={sectionLabelStyle}>👗 Dress Code</div>
-      <h3 style={cardHeadingStyle}>{dresscode.title}</h3>
-      <p style={{ color: colors.muted, fontSize: 13, lineHeight: 1.8, marginBottom: 20 }}>
+    <div className="detail-card fu4 glass-card card-dress-code">
+      <div className="section-label">👗 Dress Code</div>
+      <h3 className="card-heading">{dresscode.title}</h3>
+      <p className="dress-description">
         {dresscode.description}
       </p>
 
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 10, letterSpacing: '1.5px', textTransform: 'uppercase', color: colors.gold, marginBottom: 10 }}>
+      <div className="dress-colors-section">
+        <div className="dress-colors-label">
           Colors
         </div>
-        <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+        <div className="dress-colors-list">
           {dresscode.colors.map((col, i) => (
-            <span
-              key={`${col}-${i}`}
-              style={{
-                background: 'rgba(213,137,54,0.08)',
-                border: '1px solid rgba(213,137,54,0.22)',
-                color: colors.gold,
-                padding: '4px 11px',
-                borderRadius: 20,
-                fontSize: 12,
-              }}
-            >
+            <span key={`${col}-${i}`} className="dress-color-chip">
               {col}
             </span>
           ))}
         </div>
       </div>
 
-      <div style={{ background: 'rgba(164,66,0,0.1)', border: '1px solid rgba(164,66,0,0.3)', borderRadius: 10, padding: '10px 13px' }}>
-        <span style={{ color: colors.red, fontSize: 10, letterSpacing: '1.5px', textTransform: 'uppercase' }}>Avoid </span>
-        <span style={{ color: colors.muted, fontSize: 12 }}>{dresscode.avoid}</span>
+      <div className="dress-avoid-box">
+        <span className="dress-avoid-label">Avoid </span>
+        <span className="dress-avoid-text">{dresscode.avoid}</span>
       </div>
     </div>
   );

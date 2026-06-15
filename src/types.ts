@@ -26,4 +26,9 @@ export interface PartyTheme {
   dresscode: DressCode;
 }
 
+export interface Recipe {
+  ingredients: string[];
+  instructions: string[];
+}
+
 export type AppView = 'input' | 'results' | 'detail';

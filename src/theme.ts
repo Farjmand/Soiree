@@ -1,5 +1,3 @@
-import type { CSSProperties } from 'react';
-
 export const colors = {
   bg: '#3C1518',
   card: '#4B1C1B',
@@ -13,35 +11,41 @@ export const colors = {
   red: '#A44200',
 } as const;
 
-export const cardVariants: Record<'theme' | 'menu' | 'dressCode', CSSProperties> = {
-  theme: {
-    background: 'linear-gradient(145deg, rgba(105,20,14,0.5), rgba(75,28,27,0.5))',
-    boxShadow: '0 8px 32px rgba(105,20,14,0.35)',
-  },
-  menu: {
-    background: 'linear-gradient(145deg, rgba(164,66,0,0.5), rgba(60,21,24,0.5))',
-    boxShadow: '0 8px 32px rgba(164,66,0,0.35)',
-  },
-  dressCode: {
-    background: 'linear-gradient(145deg, rgba(213,137,54,0.35), rgba(75,28,27,0.5))',
-    boxShadow: '0 8px 32px rgba(213,137,54,0.3)',
-  },
-};
+export type ThemeColors = { [K in keyof typeof colors]: string };
 
-export const glassCardBase: CSSProperties = {
-  border: '1px solid rgba(255,255,255,0.08)',
-  borderRadius: 20,
-  padding: 28,
-  backdropFilter: 'blur(16px)',
-  WebkitBackdropFilter: 'blur(16px)',
-};
+export function buildThemeCssVars(c: ThemeColors): Record<string, string> {
+  return {
+    '--color-bg': c.bg,
+    '--color-card': c.card,
+    '--color-card-deep': c.cardDeep,
+    '--color-gold': c.gold,
+    '--color-gold-light': c.goldLight,
+    '--color-cream': c.cream,
+    '--color-muted': c.muted,
+    '--color-border': c.border,
+    '--color-border-hover': c.borderHover,
+    '--color-red': c.red,
 
-export const appBackground: CSSProperties = {
-  minHeight: '100vh',
-  background: `radial-gradient(ellipse at 10% 20%, rgba(105,20,14,0.35) 0%, transparent 45%),
-               radial-gradient(ellipse at 90% 75%, rgba(213,137,54,0.18) 0%, transparent 45%),
-               radial-gradient(ellipse at 55% 50%, rgba(164,66,0,0.12) 0%, transparent 55%),
-               ${colors.bg}`,
-  fontFamily: "'DM Sans', sans-serif",
-  color: colors.cream,
-};
+    '--app-bg': `radial-gradient(ellipse at 10% 20%, ${c.cardDeep}59 0%, transparent 45%),
+               radial-gradient(ellipse at 90% 75%, ${c.gold}2e 0%, transparent 45%),
+               radial-gradient(ellipse at 55% 50%, ${c.red}1f 0%, transparent 55%),
+               ${c.bg}`,
+
+    '--card-theme-bg': `linear-gradient(145deg, ${c.cardDeep}80, ${c.card}80)`,
+    '--card-theme-shadow': `0 8px 32px ${c.cardDeep}59`,
+    '--card-menu-bg': `linear-gradient(145deg, ${c.red}80, ${c.bg}80)`,
+    '--card-menu-shadow': `0 8px 32px ${c.red}59`,
+    '--card-dress-bg': `linear-gradient(145deg, ${c.gold}59, ${c.card}80)`,
+    '--card-dress-shadow': `0 8px 32px ${c.gold}4d`,
+
+    '--gold-chip-bg': `${c.gold}14`,
+    '--gold-chip-border': `${c.gold}38`,
+    '--red-box-bg': `${c.red}1a`,
+    '--red-box-border': `${c.red}4d`,
+
+    '--preview-card-bg': `linear-gradient(140deg, ${c.cardDeep} 0%, ${c.card} 100%)`,
+
+    '--gen-btn-hover-shadow': `0 8px 28px ${c.gold}40`,
+    '--preview-hover-shadow': `0 24px 60px ${c.gold}2e`,
+  };
+}

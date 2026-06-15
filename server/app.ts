@@ -1,5 +1,6 @@
 import express, { type Express, type Request, type Response } from 'express';
 import { fetchPartyThemeFromGemini } from '../src/partyTheme';
+import { fetchRecipeFromGemini, type RecipeRequest } from '../src/recipe';
 import type { PartyForm } from '../src/types';
 
 const REQUIRED_PARTY_FORM_FIELDS: ReadonlyArray<keyof PartyForm> = [
@@ -10,6 +11,8 @@ const REQUIRED_PARTY_FORM_FIELDS: ReadonlyArray<keyof PartyForm> = [
   'fictionalUniverse',
 ];
 
+const REQUIRED_RECIPE_REQUEST_FIELDS: ReadonlyArray<keyof RecipeRequest> = ['dishName', 'dishDescription'];
+
 const MAX_PARTY_FORM_FIELD_LENGTH = 100;
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
@@ -19,6 +22,15 @@ function isPartyForm(value: unknown): value is PartyForm {
   if (typeof value !== 'object' || value === null) return false;
   const candidate = value as Record<string, unknown>;
   return REQUIRED_PARTY_FORM_FIELDS.every((field) => {
+    const fieldValue = candidate[field];
+    return typeof fieldValue === 'string' && fieldValue.length <= MAX_PARTY_FORM_FIELD_LENGTH;
+  });
+}
+
+function isRecipeRequest(value: unknown): value is RecipeRequest {
+  if (typeof value !== 'object' || value === null) return false;
+  const candidate = value as Record<string, unknown>;
+  return REQUIRED_RECIPE_REQUEST_FIELDS.every((field) => {
     const fieldValue = candidate[field];
     return typeof fieldValue === 'string' && fieldValue.length <= MAX_PARTY_FORM_FIELD_LENGTH;
   });
@@ -64,9 +76,31 @@ async function handleGenerateTheme(request: Request, response: Response): Promis
   }
 }
 
+async function handleGenerateRecipe(request: Request, response: Response): Promise<void> {
+  if (!isRecipeRequest(request.body)) {
+    response.status(400).json({ error: 'Request body must include dishName and dishDescription as strings' });
+    return;
+  }
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    response.status(500).json({ error: 'Server is not configured with a Gemini API key' });
+    return;
+  }
+
+  try {
+    const recipe = await fetchRecipeFromGemini(request.body, apiKey);
+    response.status(200).json(recipe);
+  } catch {
+    response.status(502).json({ error: 'Failed to generate recipe' });
+  }
+}
+
 export function createApp(): Express {
   const app = express();
+  app.set('trust proxy', 1);
   app.use(express.json());
   app.post('/api/generate-theme', createRateLimiter(RATE_LIMIT_WINDOW_MS, RATE_LIMIT_MAX_REQUESTS), handleGenerateTheme);
+  app.post('/api/generate-recipe', createRateLimiter(RATE_LIMIT_WINDOW_MS, RATE_LIMIT_MAX_REQUESTS), handleGenerateRecipe);
   return app;
 }

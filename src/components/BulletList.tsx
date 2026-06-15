@@ -1,25 +1,13 @@
-import type { CSSProperties } from 'react';
-import { colors } from '../theme';
-
-const bulletListStyle: CSSProperties = {
-  margin: 0,
-  paddingLeft: 18,
-  color: colors.muted,
-  fontSize: 13,
-  lineHeight: 1.8,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 6,
-};
-
 interface BulletListProps {
   readonly items: string[];
-  readonly style?: CSSProperties;
+  readonly className?: string;
 }
 
-export function BulletList({ items, style }: BulletListProps) {
+export function BulletList({ items, className }: BulletListProps) {
+  const listClassName = className ? `bullet-list ${className}` : 'bullet-list';
+
   return (
-    <ul style={{ ...bulletListStyle, ...style }}>
+    <ul className={listClassName}>
       {items.map((item, i) => (
         <li key={`${item}-${i}`}>{item}</li>
       ))}

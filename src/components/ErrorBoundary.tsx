@@ -1,5 +1,4 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { appBackground, colors } from '../theme';
 
 interface ErrorBoundaryProps {
   readonly children: ReactNode;
@@ -23,12 +22,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ ...appBackground, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: 24 }}>
+        <div className="error-boundary-bg">
           <div>
-            <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 28, fontWeight: 300, color: colors.cream, marginBottom: 12 }}>
+            <h1 className="error-boundary-title">
               Something went wrong
             </h1>
-            <p style={{ color: colors.muted, fontSize: 14 }}>Please refresh the page and try again.</p>
+            <p className="error-boundary-text">Please refresh the page and try again.</p>
           </div>
         </div>
       );
