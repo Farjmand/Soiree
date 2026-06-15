@@ -1,6 +1,6 @@
 import type { Recipe } from './types';
 
-const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent';
 
 const SYSTEM_PROMPT = `You are a brilliant chef. Return ONLY valid JSON — no markdown, no backticks, no commentary. Use exactly this shape:
 {
